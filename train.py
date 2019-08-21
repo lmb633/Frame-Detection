@@ -7,6 +7,7 @@ from config import device, grad_clip, print_freq, loss_ratio
 from data_gen import FrameDetectionDataset
 from models import FrameDetectionModel
 from utils import parse_args, save_checkpoint, AverageMeter, clip_gradient, get_logger
+from demo import visual_img
 
 
 def train_net(args):
@@ -20,22 +21,23 @@ def train_net(args):
 
     # Initialize / load checkpoint
     if checkpoint is None:
+        print("from beginning ")
         model = FrameDetectionModel()
-        model = nn.DataParallel(model)
-
-        if args.optimizer == 'sgd':
-            optimizer = torch.optim.SGD([{'params': model.parameters()}],
-                                        lr=args.lr, momentum=args.mom, weight_decay=args.weight_decay)
-        else:
-            optimizer = torch.optim.Adam([{'params': model.parameters()}],
-                                         lr=args.lr, weight_decay=args.weight_decay)
+        # model = nn.DataParallel(model)
 
     else:
+        print("load checkpoint ")
         checkpoint = torch.load(checkpoint)
         start_epoch = checkpoint['epoch'] + 1
         epochs_since_improvement = checkpoint['epochs_since_improvement']
         model = checkpoint['model']
-        optimizer = checkpoint['optimizer']
+        # optimizer = checkpoint['optimizer']
+    if args.optimizer == 'sgd':
+        optimizer = torch.optim.SGD([{'params': model.parameters()}], lr=args.lr, momentum=args.mom, weight_decay=args.weight_decay)
+    else:
+        optimizer = torch.optim.Adam([{'params': model.parameters()}], lr=args.lr, weight_decay=args.weight_decay)
+    print(optimizer)
+    print('optimizer.lr ', optimizer.state_dict()['param_groups'][0]['lr'])
 
     logger = get_logger()
 
@@ -82,6 +84,8 @@ def train_net(args):
 
         # Save checkpoint
         save_checkpoint(epoch, epochs_since_improvement, model, optimizer, best_loss, is_best)
+        print('optimizer.lr ', optimizer.state_dict()['param_groups'][0]['lr'])
+        visual_img(model)
 
 
 def train(train_loader, model, criterion, optimizer, epoch, logger):
@@ -91,13 +95,16 @@ def train(train_loader, model, criterion, optimizer, epoch, logger):
 
     # Batches
     for i, (img, label) in enumerate(train_loader):
+        print(img.shape)
+        print(label.shape)
         # Move to GPU, if available
         img = img.to(device)
         label = label.type(torch.FloatTensor).to(device)  # [N, 8]
 
         # Forward prop.
         output = model(img)  # embedding => [N, 8]
-
+        print(output.shape)
+        print(label)
         # Calculate loss
         loss = criterion(output, label)
         loss = loss * loss_ratio

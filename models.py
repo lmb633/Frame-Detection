@@ -9,6 +9,7 @@ class FrameDetectionModel(nn.Module):
     def __init__(self):
         super(FrameDetectionModel, self).__init__()
         resnet = models.resnet50(pretrained=True)
+        print(resnet)
         # Remove linear layer (since we're not doing classification)
         modules = list(resnet.children())[:-1]
         self.resnet = nn.Sequential(*modules)
@@ -25,7 +26,10 @@ class FrameDetectionModel(nn.Module):
 
 if __name__ == "__main__":
     from utils import parse_args
-
+    import torch
     args = parse_args()
     model = FrameDetectionModel().to(device)
-    summary(model, (3, 224, 224))
+    # img=torch.Tensor(2,3,256,256)
+    # out=model(img)
+    # print(out.shape)
+    summary(model, (3, 256, 256))

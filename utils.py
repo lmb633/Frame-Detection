@@ -8,8 +8,6 @@ import torch
 
 from config import MIN_MATCH_COUNT
 
-# Initiate SIFT detector
-sift = cv.xfeatures2d.SIFT_create()
 FLANN_INDEX_KDTREE = 0
 index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
 search_params = dict(checks=50)
@@ -29,6 +27,14 @@ def draw_bboxes(img, points):
     return img
 
 
+def draw_bboxes2(img, points):
+    cv.circle(img, (int(points[0]), int(points[1])), 20, (0, 255, 0), 8)
+    cv.circle(img, (int(points[2]), int(points[3])), 40, (0, 255, 0), 8)
+    cv.circle(img, (int(points[4]), int(points[5])), 60, (0, 255, 0), 8)
+    cv.circle(img, (int(points[6]), int(points[7])), 80, (0, 255, 0), 8)
+    return img
+
+
 def do_match(file1, file2):
     img1 = cv.imread(file1, 0)
     img2 = cv.imread(file2, 0)
@@ -38,7 +44,8 @@ def do_match(file1, file2):
 
     # print('img1.shape: ' + str(img1.shape))
     # print('img2.shape: ' + str(img1.shape))
-
+    # Initiate SIFT detector
+    sift = cv.xfeatures2d.SIFT_create()
     # find the keypoints and descriptors with SIFT
     kp1, des1 = sift.detectAndCompute(img1, None)
     kp2, des2 = sift.detectAndCompute(img2, None)
@@ -124,7 +131,6 @@ class AverageMeter(object):
 
 
 class LossMeterBag(object):
-
     def __init__(self, name_list):
         self.meter_dict = dict()
         self.name_list = name_list
@@ -196,3 +202,53 @@ def ensure_folder(folder):
     import os
     if not os.path.isdir(folder):
         os.mkdir(folder)
+
+
+def sort_four_dot(output):
+    dot1 = [output[0], output[1]]
+    dot2 = [output[2], output[3]]
+    dot3 = [output[4], output[5]]
+    dot4 = [output[6], output[7]]
+    dotstemp = {0: dot1, 1: dot2, 2: dot3, 3: dot4}
+    dots = {0: dot1, 1: dot2, 2: dot3, 3: dot4}
+    sum1 = output[0] + output[1]
+    sum2 = output[2] + output[3]
+    sum3 = output[4] + output[5]
+    sum4 = output[6] + output[7]
+    sums = [sum1, sum2, sum3, sum4]
+    indexs = [-1, -1, -1, -1]
+    # print(sums)
+    # print(np.argmax(sums))
+    # print(np.argmin(sums))
+    mindot = np.argmin(sums)
+    maxdot = np.argmax(sums)
+    indexs[0] = mindot
+    indexs[2] = maxdot
+    dots.pop(mindot)
+    dots.pop(maxdot)
+    dottemp1 = dots.popitem()
+    dottemp2 = dots.popitem()
+    # print(dottemp1[1][0])
+    # print(dottemp2)
+    if dottemp1[1][0] < dottemp2[1][0]:
+        indexs[1] = dottemp2[0]
+        indexs[3] = dottemp1[0]
+    else:
+        indexs[1] = dottemp1[0]
+        indexs[3] = dottemp2[0]
+    # print(indexs)
+    result = []
+    for idx in indexs:
+        result.append(dotstemp[idx][0])
+        result.append(dotstemp[idx][1])
+    # print(result)
+    return result
+
+
+def cut_and_adjust_img(img, srcdots, wide=500, height=450):
+    src = np.array([[srcdots[0], srcdots[1]], [srcdots[2], srcdots[3]], [srcdots[4], srcdots[5]], [srcdots[6], srcdots[7]]], np.float32)
+    dst = np.array([[0, 0], [wide, 0], [wide, height], [0, height]], np.float32)
+    M3 = cv.getPerspectiveTransform(src, dst)  # 计算投影矩阵
+    print(M3)
+    img2 = cv.warpPerspective(img, M3, (wide, height), borderValue=0)
+    return img2

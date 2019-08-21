@@ -10,7 +10,7 @@ from config import im_size, pickle_file, num_train
 # Just normalization for validation
 data_transforms = {
     'train': transforms.Compose([
-        transforms.RandomHorizontalFlip(),
+        # transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
     ]),
@@ -26,7 +26,7 @@ class FrameDetectionDataset(Dataset):
         with open(pickle_file, 'rb') as file:
             data = pickle.load(file)
 
-        samples = [item for item in data if not item['is_sample'] and item['pts']]
+        samples = [item for item in data]
 
         if split == 'train':
             self.samples = samples[:num_train]
