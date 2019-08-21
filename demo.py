@@ -8,15 +8,15 @@ from torchvision import transforms
 
 from config import im_size, pickle_file, num_train, device
 from data_gen import data_transforms
-from utils import ensure_folder, draw_bboxes2, draw_bboxes, sort_four_dot,cut_and_adjust_img
+from utils import ensure_folder, draw_bboxes2, draw_bboxes,cut_and_adjust_img,sort_four_dot
 import os
 
 img_num = 32
-
 transformer = data_transforms['valid']
 
-
 def visual_img(model):
+    transformer = data_transforms['valid']
+
     with open(pickle_file, 'rb') as file:
         data = pickle.load(file)
 
@@ -56,6 +56,8 @@ def visual_img(model):
 
 
 def visual_img1(model):
+    transformer = data_transforms['valid']
+
     files = os.listdir('real_screen')
     samples = random.sample(files, img_num)
     imgs = torch.zeros([img_num, 3, im_size, im_size], dtype=torch.float)
@@ -73,7 +75,7 @@ def visual_img1(model):
             img = transformer(img)
             imgs[i] = img
 
-            # cv.imwrite('real_screen/images/{}_img.jpg'.format(i), raw)
+            cv.imwrite('real_screen/images/{}_img.jpg'.format(i), raw)
 
     for i in range(img_num):
         with torch.no_grad():
@@ -91,7 +93,6 @@ def visual_img1(model):
         img = draw_bboxes2(img, output)
         cv.imwrite('real_screen/images/{}_out.jpg'.format(i), img)
 
-
 def cut_img(model, imgpath):
     img_origin = cv.imread(imgpath)
     print(img_origin.shape)
@@ -104,53 +105,32 @@ def cut_img(model, imgpath):
     with torch.no_grad():
         output = model(torch.unsqueeze(img, 0).to(device))
     print(output)
-    output = output.reshape(4, -1)
+    output=output.reshape(4,-1)
     print(output)
     output = output.cpu().numpy()
     output = output * [h, w]
-    output = output.reshape(-1)
-
-    # img = draw_bboxes2(img_origin, output)
-    # cv.imwrite('real_screen/{}_out.jpg'.format(fullpath), img)
-
-
+    output=output.reshape(-1)
+    output = sort_four_dot(output)
+    img = draw_bboxes2(img_origin, output)
+    cv.imwrite('{}_out.jpg'.format(fullpath), img)
+    img2 = cut_and_adjust_img(img,output)
+    cv.imwrite('{}_adjust.jpg'.format(fullpath), img2)
 
 
 if __name__ == "__main__":
-    # checkpoint = 'BEST_checkpoint.tar'
-    # checkpoint = torch.load(checkpoint)
-    # model = checkpoint['model']
-    # model = model.to(device)
-    # model.eval()
-    # visual_img1(model)
-    # # transformer = data_transforms['valid']
-    #
-    # files = os.listdir('real_screen')
-    # for file in files:
-    #     fullpath = os.path.join('real_screen', file)
-    #     # fullpath = 'real_screen/test2.jpg'
-    #     if not 'images' in fullpath:
-    #         cut_img(model, fullpath)
+    checkpoint = 'BEST_checkpoint.tar'
+    checkpoint = torch.load(checkpoint)
+    model = checkpoint['model']
+    model = model.to(device)
+    model.eval()
+    #visual_img1(model)
+    #transformer = data_transforms['valid']
+    #fullpath = 'real_screen/test2.jpg'
+    #cut_img(model,fullpath)
 
-    # visual_img1(model)
-    fullpath = 'test_img/test2.jpg'
-    # cut_img(None, fullpath)
-    img_origin = cv.imread(fullpath)
-    print(img_origin.shape)
-    w, h, c = img_origin.shape
-    output = np.array([0.7690, 0.0856, 0.2605, 0.1825, 0.2752, 0.7799, 0.7802, 0.8301])
-    output = output.reshape(4, -1)
-    print(output)
-    output = output * [h, w]
-    print(output)
 
-    output = output.reshape(-1)
-    output = sort_four_dot(output)
-
-    img = draw_bboxes2(img_origin, output)
-    # img = cv.resize(img_origin, (1024, 700))
-    cv.imwrite('out_test.png', img)
-    print(output)
-    img2 = cut_and_adjust_img(img,output)
-    cv.imshow('result', img2)
-    cv.waitKey(0)
+    files = os.listdir('real_screen')
+    for file in files:
+        fullpath = os.path.join('real_screen', file)
+        if not 'images' in fullpath:
+            cut_img(model, fullpath)
