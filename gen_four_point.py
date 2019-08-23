@@ -54,11 +54,11 @@ def gen_points_from_image():
         if screenCnt is not None:
             cv.drawContours(image, [screenCnt], -1, (0, 255, 0), 3)
             cv.imwrite('images2/out_{}'.format(file).replace('back', ''), image)
-        screenCnt = np.squeeze(screenCnt, 1).reshape((8,))
-        print(screenCnt)
-        screenCnt = sort_four_dot(screenCnt)
-        print(screenCnt)
-        data.append({'fullpath': filename.replace('back', 'screen'), 'pts': screenCnt})
+            screenCnt = np.squeeze(screenCnt, 1).reshape((8,))
+            print(screenCnt)
+            screenCnt = sort_four_dot(screenCnt)
+            print(screenCnt)
+            data.append({'fullpath': filename.replace('back', 'screen'), 'pts': screenCnt})
     with open('data/data.pkl', 'wb') as file:
         pickle.dump(data, file)
 
