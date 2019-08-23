@@ -27,7 +27,9 @@ class FrameDetectionDataset(Dataset):
             data = pickle.load(file)
 
         samples = [item for item in data]
-
+        num = len(samples)
+        num_test = int(num / 10)
+        num_train = num - num_test
         if split == 'train':
             self.samples = samples[:num_train]
         else:
