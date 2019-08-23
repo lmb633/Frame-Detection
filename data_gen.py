@@ -45,7 +45,7 @@ class FrameDetectionDataset(Dataset):
         img = self.transformer(img)
 
         pts = np.array(sample['pts'])
-        pts = pts.reshape((8, ))
+        pts = pts.reshape((8,))
         pts = pts / im_size
         pts = np.clip(pts, 0, 1)
 
@@ -58,3 +58,4 @@ class FrameDetectionDataset(Dataset):
 if __name__ == "__main__":
     dataset = FrameDetectionDataset('train')
     print(dataset[0])
+    print(len(dataset))

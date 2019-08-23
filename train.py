@@ -93,16 +93,16 @@ def train(train_loader, model, criterion, optimizer, epoch, logger):
 
     # Batches
     for i, (img, label) in enumerate(train_loader):
-        print(img.shape)
-        print(label.shape)
+        # print(img.shape)
+        # print(label.shape)
         # Move to GPU, if available
         img = img.to(device)
         label = label.type(torch.FloatTensor).to(device)  # [N, 8]
 
         # Forward prop.
         output = model(img)  # embedding => [N, 8]
-        print(output.shape)
-        print(label)
+        # print(output.shape)
+        # print(label)
         # Calculate loss
         loss = criterion(output, label)
         loss = loss * loss_ratio

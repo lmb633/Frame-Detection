@@ -9,7 +9,7 @@ class FrameDetectionModel(nn.Module):
     def __init__(self):
         super(FrameDetectionModel, self).__init__()
         resnet = models.resnet50(pretrained=True)
-        print(resnet)
+        # print(resnet)
         # Remove linear layer (since we're not doing classification)
         modules = list(resnet.children())[:-1]
         self.resnet = nn.Sequential(*modules)
