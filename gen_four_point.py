@@ -4,6 +4,8 @@ import numpy as np
 import pickle
 import os
 from utils import sort_four_dot
+import json
+import csv
 
 
 def fit_quad(filename):
@@ -33,7 +35,7 @@ def fit_quad(filename):
     return image, screenCnt
 
 
-if __name__ == '__main__':
+def gen_points_from_image():
     data = []
     files = os.listdir("images2")
     back_files = []
@@ -59,3 +61,30 @@ if __name__ == '__main__':
         data.append({'fullpath': filename.replace('back', 'screen'), 'pts': screenCnt})
     with open('data/data.pkl', 'wb') as file:
         pickle.dump(data, file)
+
+
+def gen_points_from_csv():
+    with open('data/via_region_data.csv', encoding='utf8') as f:
+        lines = csv.reader(f)
+        header = next(lines)
+        print(header)
+        img2points0 = {}
+        img2points1 = {}
+        for line in lines:
+            imgname = line[0]
+            regin_id = line[4]
+            points = json.loads(line[5])
+            if 'name' in points:
+                print(imgname, regin_id, points)
+                if regin_id == '0':
+                    img2points0[imgname] = np.array([points['all_points_x'][0:4], points['all_points_y'][0:4]]).T.reshape(-1)
+                else:
+                    img2points1[imgname] = np.array([points['all_points_x'][0:4], points['all_points_y'][0:4]]).T.reshape(-1)
+                print(img2points0[imgname])
+        with open('data/test.pkl', 'wb') as file:
+            pickle.dump([img2points0, img2points1], file)
+
+
+if __name__ == '__main__':
+    gen_points_from_image()
+    # gen_points_from_csv()

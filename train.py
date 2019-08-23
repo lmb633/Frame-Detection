@@ -6,7 +6,7 @@ from torch import nn
 from config import device, grad_clip, print_freq, loss_ratio
 from data_gen import FrameDetectionDataset
 from models import FrameDetectionModel
-from utils import parse_args, save_checkpoint, AverageMeter, clip_gradient, get_logger
+from utils import parse_args, save_checkpoint, AverageMeter, clip_gradient, get_logger, get_iou
 from demo import visual_img
 
 
@@ -27,9 +27,7 @@ def train_net(args):
 
     else:
         print("load checkpoint ")
-        checkpoint = torch.load(checkpoint)
-        start_epoch = checkpoint['epoch'] + 1
-        epochs_since_improvement = checkpoint['epochs_since_improvement']
+        checkpoint = torch.load(checkpoint, map_location=lambda storage, loc: storage.cuda(0))
         model = checkpoint['model']
         # optimizer = checkpoint['optimizer']
     if args.optimizer == 'sgd':

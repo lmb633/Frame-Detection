@@ -1,5 +1,7 @@
 .idea
 images
 images2
-test_image
+test_img
 data
+BEST_checkpoint.tar
+__pycache__

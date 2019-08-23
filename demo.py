@@ -8,15 +8,16 @@ from torchvision import transforms
 
 from config import im_size, pickle_file, num_train, device
 from data_gen import data_transforms
-from utils import ensure_folder, draw_bboxes2, draw_bboxes,cut_and_adjust_img,sort_four_dot
+from utils import ensure_folder, draw_bboxes2, draw_bboxes, sort_four_dot, cut_and_adjust_img, get_iou
 import os
 
 img_num = 32
+
 transformer = data_transforms['valid']
+test_dir = 'test_img'
+
 
 def visual_img(model):
-    transformer = data_transforms['valid']
-
     with open(pickle_file, 'rb') as file:
         data = pickle.load(file)
 
@@ -24,7 +25,7 @@ def visual_img(model):
     samples = random.sample(samples, img_num)
     imgs = torch.zeros([img_num, 3, im_size, im_size], dtype=torch.float)
     ensure_folder('images')
-
+    origin_pts = []
     for i in range(img_num):
         sample = samples[i]
         fullpath = sample['fullpath']
@@ -37,12 +38,14 @@ def visual_img(model):
 
         cv.imwrite('images/{}_img.jpg'.format(i), raw)
         # print(sample['pts'])
-        raw = draw_bboxes2(raw, sample['pts'])
+        raw = draw_bboxes2(raw, sample['pts'], thick=3)
+        origin_pts.append(sample['pts'])
         cv.imwrite('images/{}_true.jpg'.format(i), raw)
 
     with torch.no_grad():
         outputs = model(imgs.to(device))
 
+    iou_sum = 0
     for i in range(img_num):
         output = outputs[i].cpu().numpy()
         output = output * im_size
@@ -51,51 +54,17 @@ def visual_img(model):
 
         img = cv.imread('images/{}_img.jpg'.format(i))
         # print(output)
-        img = draw_bboxes2(img, output)
+        img = draw_bboxes2(img, output, thick=3)
+        iou_sum += get_iou(origin_pts[i], output)
         cv.imwrite('images/{}_out.jpg'.format(i), img)
+    return iou_sum / img_num
 
 
-def visual_img1(model):
-    transformer = data_transforms['valid']
+def cut_img(model, file, realoutput):
+    fullpath = os.path.join(test_dir, file)
+    print(fullpath)
+    img_origin = cv.imdecode(np.fromfile(fullpath, dtype=np.uint8), cv.IMREAD_COLOR)
 
-    files = os.listdir('real_screen')
-    samples = random.sample(files, img_num)
-    imgs = torch.zeros([img_num, 3, im_size, im_size], dtype=torch.float)
-    ensure_folder('real_screen/images')
-
-    for i in range(img_num):
-        sample = samples[i]
-        fullpath = os.path.join('real_screen', sample)
-        if not 'images' in fullpath:
-            print(fullpath)
-            raw = cv.imread(fullpath)
-            raw = cv.resize(raw, (im_size, im_size))
-            img = raw[..., ::-1]  # RGB
-            img = transforms.ToPILImage()(img)
-            img = transformer(img)
-            imgs[i] = img
-
-            cv.imwrite('real_screen/images/{}_img.jpg'.format(i), raw)
-
-    for i in range(img_num):
-        with torch.no_grad():
-            output = model(torch.unsqueeze(imgs[i], 0).to(device))
-        print(output)
-        output = torch.squeeze(output)
-        print(output)
-        output = output.cpu().numpy()
-        output = output * im_size
-        # print('output: ' + str(output))
-        # print('output.shape: ' + str(output.shape))
-
-        img = cv.imread('real_screen/images/{}_img.jpg'.format(i))
-        # print(output)
-        img = draw_bboxes2(img, output)
-        cv.imwrite('real_screen/images/{}_out.jpg'.format(i), img)
-
-def cut_img(model, imgpath):
-    img_origin = cv.imread(imgpath)
-    print(img_origin.shape)
     w, h, c = img_origin.shape
     img = cv.resize(img_origin, (im_size, im_size))
     img = img[..., ::-1]  # RGB
@@ -104,33 +73,49 @@ def cut_img(model, imgpath):
 
     with torch.no_grad():
         output = model(torch.unsqueeze(img, 0).to(device))
-    print(output)
-    output=output.reshape(4,-1)
-    print(output)
+    output = output.reshape(4, -1)
     output = output.cpu().numpy()
     output = output * [h, w]
-    output=output.reshape(-1)
+    output = output.reshape(-1)
     output = sort_four_dot(output)
+    roi = get_iou(output, realoutput)
+    print(roi)
+
     img = draw_bboxes2(img_origin, output)
-    cv.imwrite('{}_out.jpg'.format(fullpath), img)
-    img2 = cut_and_adjust_img(img,output)
-    cv.imwrite('{}_adjust.jpg'.format(fullpath), img2)
+    cv.imwrite('{}_out.jpg'.format(test_dir + '/image/' + file), img)
+    img0 = draw_bboxes2(img_origin, realoutput, 'g')
+    cv.imwrite('{}_real.jpg'.format(test_dir + '/image/' + file), img0)
+    img2 = cut_and_adjust_img(img, output)
+    cv.imwrite('{}_adjust.jpg'.format(test_dir + '/image/' + file), img2)
+    return roi
 
 
 if __name__ == "__main__":
     checkpoint = 'BEST_checkpoint.tar'
-    checkpoint = torch.load(checkpoint)
+    checkpoint = torch.load(checkpoint, map_location=torch.device('cpu'))
     model = checkpoint['model']
     model = model.to(device)
     model.eval()
-    #visual_img1(model)
-    #transformer = data_transforms['valid']
-    #fullpath = 'real_screen/test2.jpg'
-    #cut_img(model,fullpath)
 
+    with open('data/test.pkl', 'rb') as f:
+        testimg = pickle.load(f)
+        realdots = testimg[1]
 
-    files = os.listdir('real_screen')
+    files = os.listdir(test_dir)
+    rois = {}
     for file in files:
-        fullpath = os.path.join('real_screen', file)
-        if not 'images' in fullpath:
-            cut_img(model, fullpath)
+        if not 'images' in file and file in realdots:
+            realoutput = realdots[file]
+            realoutput = sort_four_dot(realoutput)
+            rois[file] = (cut_img(model, file, realoutput))
+    print(rois)
+    print(len(rois))
+    rois0 = [roi for roi in rois if rois[roi] > 0.95]
+    print(len(rois0))
+    print(rois0)
+    rois1 = [roi for roi in rois if rois[roi] > 0.9]
+    print(len(rois1))
+    rois2 = [roi for roi in rois if rois[roi] > 0.8]
+    print(len(rois2))
+    rois3 = [roi for roi in rois if rois[roi] > 0.7]
+    print(len(rois3))
