@@ -83,7 +83,7 @@ def train_net(args):
         # Save checkpoint
         save_checkpoint(epoch, epochs_since_improvement, model, optimizer, best_loss, is_best)
         print('optimizer.lr ', optimizer.state_dict()['param_groups'][0]['lr'])
-        visual_img(model)
+        print('valid avg iou:',visual_img(model))
 
 
 def train(train_loader, model, criterion, optimizer, epoch, logger):

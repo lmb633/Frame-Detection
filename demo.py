@@ -11,7 +11,7 @@ from data_gen import data_transforms
 from utils import ensure_folder, draw_bboxes2, draw_bboxes, sort_four_dot, cut_and_adjust_img, get_iou
 import os
 
-img_num = 32
+img_num = 64
 
 transformer = data_transforms['valid']
 test_dir = 'test_img'
@@ -60,7 +60,7 @@ def visual_img(model):
     return iou_sum / img_num
 
 
-def cut_img(model, file, realoutput):
+def cut_img(model, file, realoutput=None):
     fullpath = os.path.join(test_dir, file)
     print(fullpath)
     img_origin = cv.imdecode(np.fromfile(fullpath, dtype=np.uint8), cv.IMREAD_COLOR)
@@ -78,16 +78,19 @@ def cut_img(model, file, realoutput):
     output = output * [h, w]
     output = output.reshape(-1)
     output = sort_four_dot(output)
-    roi = get_iou(output, realoutput)
-    print(roi)
+
 
     img = draw_bboxes2(img_origin, output)
     cv.imwrite('{}_out.jpg'.format(test_dir + '/image/' + file), img)
-    img0 = draw_bboxes2(img_origin, realoutput, 'g')
-    cv.imwrite('{}_real.jpg'.format(test_dir + '/image/' + file), img0)
     img2 = cut_and_adjust_img(img, output)
     cv.imwrite('{}_adjust.jpg'.format(test_dir + '/image/' + file), img2)
-    return roi
+
+    if realdots is not None:
+        roi = get_iou(output, realoutput)
+        print(roi)
+        img0 = draw_bboxes2(img_origin, realoutput, 'g')
+        cv.imwrite('{}_real.jpg'.format(test_dir + '/image/' + file), img0)
+        return roi
 
 
 if __name__ == "__main__":
