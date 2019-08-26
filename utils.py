@@ -29,7 +29,7 @@ def draw_bboxes(img, points):
     return img
 
 
-def draw_bboxes2(img, points, color='r',thick=10):
+def draw_bboxes2(img, points, color='r', thick=10):
     if color == 'g':
         rgb = (255, 0, 0)
     elif color == 'b':
@@ -254,8 +254,10 @@ def sort_four_dot(output):
 
 
 def cut_and_adjust_img(img, srcdots, wide=224, height=224):
-    height1 = int((srcdots[7] - srcdots[1]) / 3)
-    height2 = int((srcdots[5] - srcdots[3]) / 3)
+    # height1 = int((srcdots[7] - srcdots[1]) / 3)
+    # height2 = int((srcdots[5] - srcdots[3]) / 3)
+    height1 = 0
+    height2 = 0
     src = np.array([[srcdots[0], srcdots[1]], [srcdots[2], srcdots[3]], [srcdots[4], srcdots[5] - height2], [srcdots[6], srcdots[7] - height1]], np.float32)
     dst = np.array([[0, 0], [wide, 0], [wide, height], [0, height]], np.float32)
     M3 = cv.getPerspectiveTransform(src, dst)  # 计算投影矩阵

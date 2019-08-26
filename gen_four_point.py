@@ -86,5 +86,5 @@ def gen_points_from_csv():
 
 
 if __name__ == '__main__':
-    gen_points_from_image()
-    # gen_points_from_csv()
+    # gen_points_from_image()
+    gen_points_from_csv()

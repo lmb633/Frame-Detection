@@ -99,7 +99,7 @@ if __name__ == "__main__":
 
     with open('data/test.pkl', 'rb') as f:
         testimg = pickle.load(f)
-        realdots = testimg[1]
+        realdots = testimg[0]
 
     files = os.listdir(test_dir)
     rois = {}

@@ -11,8 +11,8 @@ from demo import visual_img
 
 
 def train_net(args):
-    torch.manual_seed(7)
-    np.random.seed(7)
+    # torch.manual_seed(7)
+    # np.random.seed(7)
     checkpoint = args.checkpoint
     start_epoch = 0
     best_loss = float('inf')

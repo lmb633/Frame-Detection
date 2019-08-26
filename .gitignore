@@ -3,5 +3,5 @@ images
 images2
 test_img
 data
-BEST_checkpoint.tar
+BEST_checkpoint.tar*
 __pycache__
