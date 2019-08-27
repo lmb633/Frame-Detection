@@ -94,7 +94,7 @@ def cut_img(model, file, realoutput=None):
 
 
 if __name__ == "__main__":
-    checkpoint = 'BEST_checkpoint.tar'
+    checkpoint = 'BEST_checkpoint.tar.bak0827'
     checkpoint = torch.load(checkpoint, map_location=torch.device('cpu'))
     model = checkpoint['model']
     model = model.to(device)

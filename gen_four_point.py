@@ -40,6 +40,8 @@ def gen_points_from_image():
     files = os.listdir("images2")
     back_files = []
     screen_files = []
+    i = 0
+    j = 0
     for file in files:
         if 'back' in file and not file.endswith('meta'):
             back_files.append(file)
@@ -59,6 +61,9 @@ def gen_points_from_image():
             screenCnt = sort_four_dot(screenCnt)
             print(screenCnt)
             data.append({'fullpath': filename.replace('back', 'screen'), 'pts': screenCnt})
+            j += 1
+        i += 1
+        print(j, i)
     with open('data/data.pkl', 'wb') as file:
         pickle.dump(data, file)
 
@@ -86,5 +91,5 @@ def gen_points_from_csv():
 
 
 if __name__ == '__main__':
-    # gen_points_from_image()
-    gen_points_from_csv()
+    gen_points_from_image()
+    # gen_points_from_csv()

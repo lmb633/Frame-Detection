@@ -32,4 +32,4 @@ if __name__ == "__main__":
     # img=torch.Tensor(2,3,256,256)
     # out=model(img)
     # print(out.shape)
-    summary(model, (3, 256, 256))
+    summary(model, (3, 224, 224))
